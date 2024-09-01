@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>車輛資料表單</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #45a049;
+            --background-color: #f4f4f4;
+            --form-background: #ffffff;
+            --text-color: #333333;
+            --border-color: #dddddd;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--form-background);
+            padding: 40px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 30px;
+        }
+        form {
+            display: grid;
+            gap: 20px;
+            max-width: 500px;
+            margin: 0 auto 50px;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .radio-group input[type="radio"] {
+            width: auto;
+            margin-right: 5px;
+        }
+        .radio-group label {
+            font-weight: normal;
+        }
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+        #allData {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .panel-replaced {
+            display: flex;
+            flex-direction: column;
+            max-width: 200px;
+        }
+        @media screen and (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            form {
+                grid-template-columns: 1fr;
+            }
+            table {
+                font-size: 14px;
+            }
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>車輛資料表單</h1>
+        <form id="carForm">
+            <label for="model">車型：</label>
+            <input type="text" id="model" name="model" required>
+
+            <label for="year">年份：</label>
+            <select id="year" name="year" required>
+                <option value="">請選擇年份</option>
+            </select>
+
+            <label for="mileage">里程：</label>
+            <input type="text" id="mileage" name="mileage" required>
+
+            <div class="panel-replaced">
+                <label>是否有鈑件更換：</label>
+                <div class="radio-group">
+                    <input type="radio" id="panelYes" name="panelReplaced" value="是" required>
+                    <label for="panelYes">是</label>
+                    <input type="radio" id="panelNo" name="panelReplaced" value="否">
+                    <label for="panelNo">否</label>
+                </div>
+            </div>
+
+            <label for="contact">聯絡電話 / Line ID：</label>
+            <input type="text" id="contact" name="contact" required>
+
+            <button type="submit">一鍵估車</button>
+        </form>
+        
+        <h2>所有儲存的資料</h2>
+        <div id="allData">
+            <table>
+                <thead>
+                    <tr>
+                        <th>車型</th>
+                        <th>年份</th>
+                        <th>里程</th>
+                        <th>是否有鈑件更換</th>
+                        <th>聯絡資訊</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Populate year dropdown
+        const yearSelect = document.getElementById('year');
+        for (let i = 2024; i >= 1994; i--) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            yearSelect.appendChild(option);
+        }
+
+        // Load existing data
+        let carData = JSON.parse(localStorage.getItem('carData')) || [];
+
+        // Display existing data
+        displayAllData();
+
+        document.getElementById('carForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const model = document.getElementById('model').value;
+            const year = document.getElementById('year').value;
+            const mileage = document.getElementById('mileage').value;
+            const panelReplaced = document.querySelector('input[name="panelReplaced"]:checked').value;
+            const contact = document.getElementById('contact').value;
+
+            const data = {
+                model: model,
+                year: year,
+                mileage: mileage,
+                panelReplaced: panelReplaced,
+                contact: contact
+            };
+
+            // Send data to server
+            fetch('/submit-form', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.text())
+            .then(result => {
+                console.log(result);
+                // Add new data to local storage
+                carData.push(data);
+                localStorage.setItem('carData', JSON.stringify(carData));
+
+                // Reset form and update display
+                document.getElementById('carForm').reset();
+                displayAllData();
+                alert('表單提交成功，郵件已發送！');
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('表單提交失敗，請稍後再試。');
+            });
+        });
+
+        function displayAllData() {
+            const tableBody = document.querySelector('#allData table tbody');
+            tableBody.innerHTML = '';
+
+            carData.forEach(car => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = car.model;
+                row.insertCell().textContent = car.year;
+                row.insertCell().textContent = car.mileage;
+                row.insertCell().textContent = car.panelReplaced;
+                row.insertCell().textContent = car.contact;
+            });
+        }
+    </script>
+</body>
+</html>
